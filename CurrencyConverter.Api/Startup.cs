@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
 
 namespace CurrencyConverter.Api
 {
@@ -55,6 +57,17 @@ namespace CurrencyConverter.Api
     });
             });
             services.AddSwaggerGen();
+
+            services.AddOpenTelemetry()
+          .WithTracing(builder =>
+          {
+              builder
+                  .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("CurrencyConverter"))
+                  .AddAspNetCoreInstrumentation()
+                  .AddHttpClientInstrumentation()
+                  .AddConsoleExporter();
+          });
+
 
             // Configure HttpClient with Polly policies for resilience
             services.AddHttpClient<ICurrencyProvider, FrankfurterCurrencyProvider>()
