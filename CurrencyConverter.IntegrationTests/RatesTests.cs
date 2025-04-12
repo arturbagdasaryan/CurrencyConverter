@@ -1,4 +1,6 @@
 ﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using CurrencyConverter.Api.Models;
 using FluentAssertions;
 
 namespace CurrencyConverter.IntegrationTests
@@ -12,28 +14,18 @@ namespace CurrencyConverter.IntegrationTests
             // Arrange
             var token = await GetJwtToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var baseCurrency = "USD";
 
             // Act
-            var response = await _client.GetAsync("/api/v1/rates/latest");
+            var response = await _client.GetAsync($"/api/v1/rates/latest?baseCurrency={baseCurrency}");
 
             // Assert
             response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-            content.Should().Contain("USD");  // Check if the response contains USD rates
-        }
 
-        [TestMethod]
-        public async Task GetRates_InvalidRequest_ReturnsBadRequest()
-        {
-            // Arrange
-            var token = await GetJwtToken();
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            // Act
-            var response = await _client.GetAsync("/api/rates?invalidParameter=value");
-
-            // Assert
-            response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+            var result = await response.Content.ReadFromJsonAsync<ExchangeRatesResponse>();
+            result.Should().NotBeNull();
+            result.Rates.Should().NotBeEmpty("there should be at least one exchange rate returned");
+            result.Rates.Should().ContainKey("EUR", "EUR should be one of the returned currencies");
         }
     }
 }

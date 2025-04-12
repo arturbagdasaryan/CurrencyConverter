@@ -55,21 +55,21 @@ namespace CurrencyConverter.Api.Services
             var fullResponse = await provider.GetHistoricalRatesAsync(baseCurrency, startDate, endDate);
 
             // Perform simple in-memory pagination
-            var totalRecords = fullResponse.RatesByDate.Count;
-            var pagedData = fullResponse.RatesByDate
+            var totalRecords = fullResponse.Rates.Count;
+            var pagedData = fullResponse.Rates
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToList();
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             return new HistoricalRatesResponse
             {
-                BaseCurrency = baseCurrency,
-                StartDate = startDate,
-                EndDate = endDate,
+                Base = baseCurrency,
+                Start_Date = startDate,
+                End_Date = endDate,
                 TotalRecords = totalRecords,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                RatesByDate = pagedData
+                Rates = pagedData
             };
         }
     }

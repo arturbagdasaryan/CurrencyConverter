@@ -18,21 +18,21 @@ namespace CurrencyConverter.IntegrationTests
         {
             var loginRequest = new
             {
-                username = "admin@currencyapi.com", // Replace with actual test credentials
-                password = "P@ssw0rd" // Replace with actual test password
+                email = "admin@currencyapi.com",
+                password = "P@ssw0rd"
             };
 
-            var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+            var response = await _client.PostAsJsonAsync("/api/Auth/login", loginRequest);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
             var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(content);
-            return tokenResponse?.Token;
+            return tokenResponse?.token;
         }
 
         public class TokenResponse
         {
-            public string Token { get; set; }
+            public string token { get; set; }
         }
     }
 }

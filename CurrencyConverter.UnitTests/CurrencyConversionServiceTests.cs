@@ -134,42 +134,47 @@ namespace CurrencyConverter.UnitTests.Services
         }
 
         [TestMethod]
-        public async Task GetHistoricalRatesAsync_ReturnsPagedData()
+        public async Task GetHistoricalRatesAsync_ShouldReturnCorrectlyPagedData()
         {
             // Arrange
-            var allRates = Enumerable.Range(1, 10).Select(i => new KeyValuePair<DateTime, Dictionary<string, decimal>>(
-                new DateTime(2024, 01, i),
-                new Dictionary<string, decimal> { { "USD", 1.0m + i } }
-            )).ToList();
+            var allRates = Enumerable.Range(1, 10).Select(i =>
+                             new KeyValuePair<DateTime, Dictionary<string, double>>(
+                                 new DateTime(2024, 01, i),
+                                 new Dictionary<string, double> { { "USD", (double)(1.0m + i) } }
+                             )
+                         ).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-            // Convert the dictionary into a list of ExchangeRatesResponse
-            var exchangeRatesList = allRates.Select(kvp => new ExchangeRatesResponse
-            {
-                BaseCurrency = "EUR",
-                Date = kvp.Key,
-                Rates = kvp.Value
-            }).ToList();
 
-            // Set up the expected full response with historical data
             var fullResponse = new HistoricalRatesResponse
             {
-                BaseCurrency = "EUR",
-                RatesByDate = exchangeRatesList
+                Base = "EUR",
+                Start_Date = new DateTime(2024, 01, 1),
+                End_Date = new DateTime(2024, 01, 10),
+                Rates = allRates,
+                TotalRecords = 10,
+                PageNumber = 1,
+                PageSize = 10
             };
 
-            // Mock the provider call to return the full historical response
-            _mockProvider.Setup(p => p.GetHistoricalRatesAsync("EUR", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                         .ReturnsAsync(fullResponse);
+            _mockProvider
+                .Setup(p => p.GetHistoricalRatesAsync("EUR", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .ReturnsAsync(fullResponse);
+
+            var expectedPage = 2;
+            var expectedPageSize = 3;
 
             // Act
-            var result = await _service.GetHistoricalRatesAsync("EUR", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow, pageNumber: 2, pageSize: 3);
+            var result = await _service.GetHistoricalRatesAsync("EUR", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow, expectedPage, expectedPageSize);
 
             // Assert
-            Assert.AreEqual(3, result.RatesByDate.Count);  // Check pagination (page 2 with 3 items)
-            Assert.AreEqual(10, result.TotalRecords);      // Total records should be 10
-            Assert.AreEqual(2, result.PageNumber);         // Page number should be 2
-            Assert.AreEqual(3, result.PageSize);           // Page size should be 3
-        }
+            Assert.AreEqual(expectedPageSize, result.Rates.Count, "Should return correct number of items per page");
+            Assert.AreEqual(fullResponse.Rates.Count, result.TotalRecords, "Total records count should match");
+            Assert.AreEqual(expectedPage, result.PageNumber, "Should return the correct page number");
+            Assert.AreEqual(expectedPageSize, result.PageSize, "Should return the correct page size");
 
+            // Optional: Check specific dates or currency keys if desired
+            var expectedDates = allRates.Keys.Skip((expectedPage - 1) * expectedPageSize).Take(expectedPageSize).ToList();
+            CollectionAssert.AreEqual(expectedDates, result.Rates.Keys.ToList(), "Returned dates should match expected page slice");
+        }
     }
 }

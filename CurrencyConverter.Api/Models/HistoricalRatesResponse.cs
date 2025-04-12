@@ -2,12 +2,13 @@
 {
     public class HistoricalRatesResponse
     {
-        public string BaseCurrency { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public double Amount { get; set; }
+        public string Base { get; set; }
+        public DateTime Start_Date { get; set; }
+        public DateTime End_Date { get; set; }
         public int TotalRecords { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
-        public List<ExchangeRatesResponse> RatesByDate { get; set; }
+        public Dictionary<DateTime, Dictionary<string, double>> Rates { get; set; }
     }
 }
